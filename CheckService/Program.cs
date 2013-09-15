@@ -102,7 +102,7 @@ namespace CheckService
                             switch (id)
                             {
                                 case 1:                         //Репликации 7min
-                                    if (diff.TotalMinutes > 10 && IsWorkTime(new TimeSpan(8, 0, 0), new TimeSpan(22, 59, 59)))
+                                    if (diff.TotalMinutes > 10 && IsWorkTime(new TimeSpan(8, 0, 0), new TimeSpan(23, 59, 59)))
                                         RestartService(id);
                                     break;
                                 case 2:                         //Репликации ночные 45m
@@ -159,12 +159,12 @@ namespace CheckService
         {
             if (DateTime.Now.TimeOfDay.IsBetween(start, stop))  //new TimeSpan(23, 0, 0), new TimeSpan(7, 0, 0)
             {
-                Color.WriteLineColor("          Рабочее время магазина.", ConsoleColor.Yellow);
+                Color.WriteLineColor("          Рабочее время операции.", ConsoleColor.Yellow);
                 return true;
             }
             else
             {
-                Color.WriteLineColor("          Нерабочее время магазина.", ConsoleColor.Cyan);
+                Color.WriteLineColor("          Нерабочее время операции.", ConsoleColor.Cyan);
                 return false;
             }
         }
