@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data.OleDb;
-using System.Diagnostics;
 using System.ServiceProcess;
 using System.Threading;
 
@@ -27,8 +26,11 @@ namespace CheckService
             {
                 Color.WriteLineColor("Начало проверки службы.", ConsoleColor.Green);
                 CheckService();
+
+                int timeBetweenChecks = 60000*(int.Parse(Config.GetParametr("timeBetweenChecks")));
+
                 Color.WriteLineColor("Проверка отложена на 5 минут.", ConsoleColor.Green);
-                Thread.Sleep(300000);
+                Thread.Sleep(timeBetweenChecks);
             }
         }
 
@@ -48,7 +50,6 @@ namespace CheckService
                     TheServiceName.Start();
                     TheServiceName.WaitForStatus(ServiceControllerStatus.Running);
                     TheServiceName.Refresh();
-                    //System.Threading.Thread.Sleep(10000);
                     Log.Write("Попытка перезапуска службы " + TheServiceName.ServiceName + ". Текущий статус:" + TheServiceName.Status);
                     break;
                 default:
@@ -99,30 +100,37 @@ namespace CheckService
                             TimeSpan diff = NowDate - StartOper;
                             Log.Write("Обнаружено активное задание: " + GetStringSname(id) + " .Время выполнения составляет: " + diff.Hours + "." + diff.Minutes + "." + diff.Seconds);
 
+                            int replicationTime = int.Parse(Config.GetParametr("replicationTime"));
+                            int replicationNightTime =  int.Parse(Config.GetParametr("replicationNightTime"));
+                            int unloadingUserTimes =  int.Parse(Config.GetParametr("unloadingUserTimes"));
+                            int loadingSalesTimes =  int.Parse(Config.GetParametr("loadingSalesTimes"));
+                            int recalculationTime =  int.Parse(Config.GetParametr("recalculationTime"));
+                            int copybdTime =  int.Parse(Config.GetParametr("copybdTime"));
+
                             switch (id)
                             {
                                 case 1:                         //Репликации 7min
-                                    if (diff.TotalMinutes > 10) // && IsWorkTime(new TimeSpan(8, 0, 0), new TimeSpan(23, 59, 59)))
+                                    if (diff.TotalMinutes > replicationTime)
                                         RestartService(id);
                                     break;
                                 case 2:                         //Репликации ночные 20m
-                                    if (diff.TotalMinutes > 20) // && IsWorkTime(new TimeSpan(0, 0, 0), new TimeSpan(0, 59, 59)))
+                                    if (diff.TotalMinutes > replicationNightTime)
                                         RestartService(id);
                                     break;
                                 case 3:                         //Выгрузка терминальных пользователей 5m
-                                    if (diff.TotalMinutes > 10) // && IsWorkTime(new TimeSpan(1, 0, 0), new TimeSpan(1, 59, 59)))
+                                    if (diff.TotalMinutes > unloadingUserTimes)
                                         RestartService(id);
                                     break;
                                 case 4:                         //Прием реализации 7 m
-                                    if (diff.TotalMinutes > 12) // && IsWorkTime(new TimeSpan(23, 0, 0), new TimeSpan(23, 59, 59)))
+                                    if (diff.TotalMinutes > loadingSalesTimes)
                                         RestartService(id);
                                     break;
                                 case 5:                         //Перерасчет агрегаций 2h
-                                    if (diff.TotalMinutes > 120) //&& IsWorkTime(new TimeSpan(3, 0, 0), new TimeSpan(5, 59, 0)))
+                                    if (diff.TotalMinutes > recalculationTime)
                                         RestartService(id);
                                     break;
-                                case 6:                         //Копия БД 10m;check time restert
-                                    if (diff.TotalMinutes > 20) // && IsWorkTime(new TimeSpan(1, 0, 0), new TimeSpan(2, 59, 59)))
+                                case 6:                         //Копия БД 10m
+                                    if (diff.TotalMinutes > copybdTime)
                                         RestartService(id);
                                     break;
                             }
@@ -153,20 +161,6 @@ namespace CheckService
             TheServiceName.Refresh();
             //System.Threading.Thread.Sleep(10000);
             Log.Write("Попытка перезапуска службы " + TheServiceName.ServiceName + ". Текущий статус:" + TheServiceName.Status);
-        }
-
-        private static bool IsWorkTime(TimeSpan start, TimeSpan stop)
-        {
-            if (DateTime.Now.TimeOfDay.IsBetween(start, stop))  //new TimeSpan(23, 0, 0), new TimeSpan(7, 0, 0)
-            {
-                Color.WriteLineColor("          Рабочее время операции.", ConsoleColor.Yellow);
-                return true;
-            }
-            else
-            {
-                Color.WriteLineColor("          Нерабочее время операции.", ConsoleColor.Cyan);
-                return false;
-            }
         }
 
         private static string GetStringSname(int id)
